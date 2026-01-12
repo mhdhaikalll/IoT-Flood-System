@@ -1,0 +1,15 @@
+# FastAPI and Web Framework
+fastapi[standard]==0.113.0
+pydantic==2.8.0
+uvicorn[standard]==0.30.0
+
+# HTTP Client for LLM API calls
+httpx==0.28.1
+
+# Google Sheets Integration
+gspread==6.1.0
+google-auth==2.29.0
+google-auth-oauthlib==1.2.0
+
+# Environment variables
+python-dotenv==1.0.0
