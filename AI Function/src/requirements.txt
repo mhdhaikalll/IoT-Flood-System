@@ -13,3 +13,9 @@ google-auth-oauthlib==1.2.0
 
 # Environment variables
 python-dotenv==1.0.0
+
+# Telegram Bot (using httpx for API calls)
+# No additional dependencies needed - using httpx
+
+# For Gemini AI integration
+# Uses httpx for API calls - no additional SDK needed

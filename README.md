@@ -1,13 +1,29 @@
 # ITT569 Group Assignment
 
-A comprehensive IoT-integrated system combining hardware sensors, AI-powered backend services, and a modern web application.
+# Flood Detection and Rain Monitoring System
+
+A comprehensive IoT-integrated system for real-time flood detection and rain monitoring, combining hardware sensors, AI-powered predictions, and a modern web dashboard.
 
 ## 📋 Project Overview
 
-This project integrates three main components:
-- **IoT Device**: Arduino-based hardware for sensor data collection
-- **AI Function**: FastAPI backend with AI capabilities and Google Sheets integration
-- **Web Application**: Next.js frontend with authentication and real-time features
+This project integrates multiple components to provide end-to-end flood monitoring:
+
+```
+┌─────────────┐     ┌─────────────────────────────────────────────────┐
+│  IoT Nodes  │────▶│               FastAPI Backend                   │
+│   (ESP32)   │     │  ┌─────────────┐  ┌──────────────────────────┐  │
+└─────────────┘     │  │ Sensor Data │  │     AI Analysis          │  │
+                    │  │  Endpoint   │  │  (Gemini / Ollama)       │  │
+┌─────────────┐     │  └─────────────┘  └──────────────────────────┘  │
+│   Next.js   │◀───▶│  ┌─────────────┐  ┌──────────────────────────┐  │
+│  Dashboard  │     │  │ Prediction  │  │    Google Sheets         │  │
+└─────────────┘     │  │   API       │  │    (Database)            │  │
+                    │  └─────────────┘  └──────────────────────────┘  │
+┌─────────────┐     └──────────────────────────┬──────────────────────┘
+│  Telegram   │◀───────────────────────────────┘
+│    Bot      │     (Real-time Alerts)
+└─────────────┘
+```
 
 ## 🗂️ Project Structure
 
@@ -19,29 +35,31 @@ This project integrates three main components:
 │   └── src/                  # Python source code
 │       ├── code/             # Main application code
 │       │   ├── main.py       # FastAPI application entry point
-│       │   └── README.md     # AI Function documentation
+│       │   ├── gemini_client.py  # Gemini AI integration
+│       │   ├── telegram_bot.py   # Telegram notification bot
+│       │   └── .env.example  # Environment template
 │       └── requirements.txt  # Python dependencies
 │
 ├── IoT Source Code/          # Arduino/IoT implementation
-│   └── main.ino              # Arduino sketch
+│   └── main.ino              # ESP32/ESP8266 sketch
 │
 └── Web Application/          # Next.js frontend
     ├── src/
     │   ├── app/              # Next.js App Router
-    │   │   ├── (root)/       # Root pages
+    │   │   ├── (root)/       # Protected pages (admin, bots, settings)
     │   │   ├── api/          # API routes
     │   │   └── auth/         # Authentication pages
     │   ├── components/       # React components
-    │   │   ├── ui/           # UI components
+    │   │   ├── ui/           # shadcn/ui components
     │   │   ├── app-sidebar.jsx
     │   │   └── theme-toggle.jsx
-    │   ├── hooks/            # Custom React hooks
-    │   ├── lib/              # Utility libraries
+    │   ├── lib/
+    │   │   ├── api.js        # Backend API client
+    │   │   └── utils.js      # Utility functions
     │   └── utils/
-    │       └── supabase/     # Supabase integration
-    ├── public/               # Static assets
-    ├── package.json          # Node.js dependencies
-    └── next.config.mjs       # Next.js configuration
+    │       └── supabase/     # Supabase client
+    ├── .env.example          # Environment template
+    └── package.json          # Node.js dependencies
 ```
 
 ## 🚀 Components
@@ -50,39 +68,53 @@ This project integrates three main components:
 
 **Technology Stack:**
 - Python 3.x
-- FastAPI - Modern web framework
-- Google Sheets API - Data integration
-- Google Auth - Authentication
-- Email Validator - Input validation
+- FastAPI - Modern async web framework
+- Google Sheets API - Data storage
+- Gemini AI - Flood prediction analysis
+- Ollama - Optional local LLM support
 
 **Key Features:**
-- RESTful API endpoints
-- Google Sheets integration for data storage
-- OAuth authentication
+- RESTful API endpoints for sensor data
+- AI-powered flood risk prediction
+- Google Sheets as database
 - Real-time data processing
+- Telegram bot integration
 
 **Setup:**
 ```bash
 cd "AI Function/src"
 pip install -r requirements.txt
+
+# Copy and configure environment
+cp code/.env.example code/.env
+
+# Run the server
 python code/main.py
 ```
 
 ### 2. IoT Source Code
 
 **Technology Stack:**
-- Arduino
-- Embedded C/C++
+- ESP32 / ESP8266
+- Arduino Framework
+- WiFi HTTP Client
+
+**Hardware Components:**
+- Piezoelectric Sensor - Rain intensity detection
+- Ultrasonic Sensor (HC-SR04) - Water level measurement
+- Rain Sensor Module - Rain detection
 
 **Key Features:**
-- Sensor data collection
-- Hardware interface
-- Data transmission to backend
+- WiFi connectivity
+- Automatic data transmission
+- Retry logic for reliability
+- Serial debugging
 
 **Setup:**
 1. Open `main.ino` in Arduino IDE
-2. Configure board and port settings
-3. Upload sketch to your Arduino device
+2. Install ESP32/ESP8266 board support
+3. Configure WiFi credentials and server IP
+4. Upload sketch to your device
 
 ### 3. Web Application
 
@@ -90,25 +122,49 @@ python code/main.py
 - Next.js 14+ (App Router)
 - React
 - Tailwind CSS
-- Supabase - Backend services
+- Supabase - Authentication
 - shadcn/ui - UI components
+- Recharts - Data visualization
 
 **Key Features:**
-- Modern responsive UI
-- Authentication system
+- Real-time flood monitoring dashboard
+- Historical data charts
+- User authentication
 - Dark/Light theme toggle
-- Sidebar navigation
-- API integration
-- Real-time updates
+- Responsive design
+- Telegram bot management
 
 **Setup:**
 ```bash
 cd "Web Application"
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`
+### 4. Telegram Bot
+
+**Key Features:**
+- Real-time flood alerts
+- Query current sensor status
+- Get flood predictions on demand
+- Subscribe/unsubscribe to notifications
+
+**Commands:**
+- `/start` - Subscribe to alerts
+- `/status` - Check system status
+- `/predict` - Get flood prediction
+- `/history` - View recent readings
+- `/unsubscribe` - Stop notifications
+
+**Setup:**
+```bash
+# Configure bot token in .env
+TELEGRAM_BOT_TOKEN=your_token
+
+# Run the bot
+python code/telegram_bot.py
+```
 
 ## 📦 Prerequisites
 
