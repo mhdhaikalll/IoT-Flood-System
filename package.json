@@ -1,0 +1,27 @@
+{
+  "name": "group-assignment",
+  "version": "1.0.0",
+  "description": "A comprehensive IoT-integrated system for real-time flood detection and rain monitoring, combining hardware sensors, AI-powered predictions, and a modern web dashboard.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "web": "your-web-start-command",
+    "ai": "your-ai-start-command",
+    "dev": "concurrently \"npm run web\" \"npm run ai\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mhdhaikalll/IoT-Flood-System.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mhdhaikalll/IoT-Flood-System/issues"
+  },
+  "homepage": "https://github.com/mhdhaikalll/IoT-Flood-System#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

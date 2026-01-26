@@ -3,3 +3,5 @@
 /Include
 code/__pycache__/
 .env
+credentials.json
+credentials.*
