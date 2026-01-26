@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "web": "your-web-start-command",
-    "ai": "your-ai-start-command",
-    "dev": "concurrently \"npm run web\" \"npm run ai\""
+    "web": "cd ./Web-Application && npm run dev",
+    "ai": "cd './AI Function' && ./src/code/Activate.ps1 && cd ./src/code && python main.py && python gemini_client.py && python telegram_channel.py",
+    "start": "concurrently \"npm run web\" \"npm run ai\""
   },
   "repository": {
     "type": "git",
