@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "web": "cd ./Web-Application && npm run dev",
-    "ai": "cd './AI Function' && ./src/code/Activate.ps1 && cd ./src/code && python main.py && python gemini_client.py && python telegram_channel.py",
-    "start": "concurrently \"npm run web\" \"npm run ai\""
+    "backend": "cd './AI Function' && powershell -ExecutionPolicy Bypass -File ./src/code/Activate.ps1 && cd ./src/code && python main.py",
+    "start": "concurrently --kill-others-on-fail --names \"FRONTEND,BACKEND\" \"npm run web\" \"npm run backend\""
   },
   "repository": {
     "type": "git",

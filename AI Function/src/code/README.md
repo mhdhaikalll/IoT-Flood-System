@@ -1,13 +1,14 @@
 # Flood Detection and Rain Monitoring System - AI Function
 
-This is the AI backend service for the Flood Detection and Rain Monitoring System. It receives data from IoT sensors, stores it in Google Sheets, and uses AI to predict flood risks.
+This is the AI backend service for the Flood Detection and Rain Monitoring System. It receives data from IoT sensors, stores it in Google Sheets, uses AI to predict flood risks, and sends Telegram alerts for high/critical risk.
 
 ## Features
 
-- **Receive IoT Sensor Data**: Accepts data from nodes with Piezoelectric, Ultrasonic, and Rain sensors
+- **Receive IoT Sensor Data**: Accepts data from a single node with Piezoelectric, Ultrasonic, and Rain sensors
 - **Google Sheets Storage**: Stores all sensor data in Google Sheets as a database
-- **AI-Powered Predictions**: Uses LLM to analyze trends and predict flood risks
-- **RESTful API**: Provides endpoints for data ingestion and prediction retrieval
+- **AI-Powered Predictions**: Uses LLM (Gemini or OpenAI-compatible) to analyze trends and predict flood risks
+- **Telegram Alerts**: Sends automated alerts to a Telegram channel when flood risk is high or critical
+- **RESTful API**: Provides endpoints for data ingestion, prediction, and status
 
 ## Setup
 
@@ -27,20 +28,21 @@ pip install -r requirements.txt
 5. Save the credentials as `credentials.json` in the `code/` directory
 6. Create a Google Sheet named "FloodMonitoringData" and share it with the service account email
 
-### 3. Configure LLM (Optional)
+### 3. Configure Telegram Alerts
 
-The system supports any OpenAI-compatible LLM API. Default is configured for Ollama.
+1. Create a Telegram bot via [@BotFather](https://t.me/BotFather)
+2. Add the bot to your Telegram channel and make it an **admin**
+3. Get your channel ID (e.g., `-100xxxxxxxxxx`)
+4. Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHANNEL_ID` in your `.env` file
 
-**For Ollama:**
-```bash
-# Install Ollama and pull a model
-ollama pull llama3.2
-```
+### 4. Configure LLM (Optional)
 
-**For other LLMs:**
-Update the `.env` file with your LLM API endpoint and model name.
+The system supports any OpenAI-compatible LLM API. Default is configured for Gemini or Ollama.
 
-### 4. Environment Variables
+**For Gemini:**
+- Set `AI_PROVIDER=gemini` in `.env` (default)
+
+### 5. Environment Variables
 
 Copy `.env.example` to `.env` and update the values:
 
@@ -48,7 +50,7 @@ Copy `.env.example` to `.env` and update the values:
 cp .env.example .env
 ```
 
-### 5. Run the Server
+### 6. Run the Server
 
 ```bash
 cd code
@@ -64,103 +66,127 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ## API Endpoints
 
 ### Health Check
+
 ```
 GET /
 ```
 Returns system status and service availability.
 
-### Submit Sensor Data
+### Submit Sensor Data (Triggers Telegram alert if risk is high/critical)
+
 ```
 POST /api/sensor-data
 ```
+
 **Body:**
 ```json
 {
-    "node_id": "node_001",
-    "piezo_value": 45.5,
-    "ultrasonic_value": 35.0,
-    "rain_sensor_value": 60.0,
-    "location": "River Station A"
+    "node_id": "NODE-001",
+    "piezo_value": 90.0,
+    "ultrasonic_value": 90.0,
+    "rain_sensor_value": 90.0,
+    "location": "Test Location"
 }
 ```
 
 ### Get Flood Prediction
+
 ```
 POST /api/predict
 ```
+
 **Body:**
+
 ```json
 {
-    "node_id": "node_001",
+    "node_id": "NODE-001",
     "hours_ahead": 6
 }
 ```
 
 **Response:**
+
 ```json
 {
-    "node_id": "node_001",
-    "current_water_level": 35.0,
-    "current_rain_intensity": "moderate",
+    "node_id": "NODE-001",
+    "current_water_level": 90.0,
+    "current_rain_intensity": "extreme",
     "is_raining": true,
-    "flood_risk": "moderate",
-    "risk_percentage": 42.5,
-    "prediction_summary": "Flood risk is MODERATE (42.5%). Water level: 35.0cm. Rain intensity: moderate.",
+    "flood_risk": "critical",
+    "risk_percentage": 100.0,
+    "prediction_summary": "Flood risk is CRITICAL (100.0%). Water level: 90.0cm. Rain intensity: extreme.",
     "recommended_actions": [...],
     "ai_analysis": "...",
-    "timestamp": "2026-01-11T10:30:00"
+    "timestamp": "2026-01-28T10:30:00"
 }
 ```
 
 ### Get Sensor History
+
 ```
-GET /api/history?node_id=node_001&limit=50
+GET /api/history?node_id=NODE-001&limit=50
 ```
 
 ### Get Node Status
+
 ```
-GET /api/status/{node_id}
+GET /api/status/NODE-001
+```
+
+### Get All Nodes Status
+
+```
+GET /api/nodes
 ```
 
 ## Sensor Data Interpretation
 
-| Sensor | Value Range | Meaning |
-|--------|-------------|---------|
-| Piezo | 0-100 | Rain intensity (0=none, 100=extreme) |
-| Ultrasonic | 0+ cm | Water level in centimeters |
-| Rain Sensor | 0-100 | Rain detection (0=dry, 100=heavy rain) |
+| Sensor      | Value Range | Meaning                                 |
+|-------------|-------------|-----------------------------------------|
+| Piezo       | 0-100       | Rain intensity (0=none, 100=extreme)    |
+| Ultrasonic  | 0+ cm       | Water level in centimeters              |
+| Rain Sensor | 0-100       | Rain detection (0=dry, 100=heavy rain)  |
 
 ## Flood Risk Levels
 
-| Level | Risk % | Action |
-|-------|--------|--------|
-| LOW | 0-24% | Normal monitoring |
-| MODERATE | 25-49% | Increased monitoring |
-| HIGH | 50-74% | Prepare evacuation |
-| CRITICAL | 75-100% | Immediate evacuation |
+| Level     | Risk % | Action                  |
+|-----------|--------|-------------------------|
+| LOW       | 0-24%  | Normal monitoring       |
+| MODERATE  | 25-49% | Increased monitoring    |
+| HIGH      | 50-74% | Prepare evacuation      |
+| CRITICAL  | 75-100%| Immediate evacuation    |
+
+## Telegram Alert Logic
+
+- Alerts are sent to the configured Telegram channel when:
+  - Flood risk is HIGH or CRITICAL
+  - Risk percentage is 50% or above
+  - Cooldown period (15 min) has passed for the node
 
 ## Architecture
 
 ```
-IoT Node (Sensors) 
+IoT Node (Sensors)
     │
     ▼ POST /api/sensor-data
-┌──────────────────────┐
-│   FastAPI Server     │
-│   ┌──────────────┐   │
-│   │ Data Process │   │
-│   └──────┬───────┘   │
-│          │           │
-│   ┌──────▼───────┐   │
-│   │ Google Sheets│   │
-│   │  (Database)  │   │
-│   └──────┬───────┘   │
-│          │           │
-│   ┌──────▼───────┐   │
-│   │  AI Analysis │   │
-│   │    (LLM)     │   │
-│   └──────────────┘   │
-└──────────────────────┘
+┌──────────────────────────────┐
+│   FastAPI Server (main.py)   │
+│   ┌──────────────────────┐   │
+│   │ Data Processing      │   │
+│   └─────────┬────────────┘   │
+│             │                │
+│   ┌─────────▼────────────┐   │
+│   │ Google Sheets (DB)   │   │
+│   └─────────┬────────────┘   │
+│             │                │
+│   ┌─────────▼────────────┐   │
+│   │  AI Analysis (LLM)   │   │
+│   └─────────┬────────────┘   │
+│             │                │
+│   ┌─────────▼────────────┐   │
+│   │ Telegram Alert       │   │
+│   └──────────────────────┘   │
+└──────────────────────────────┘
     │
     ▼ POST /api/predict
 Web Application / Dashboard
