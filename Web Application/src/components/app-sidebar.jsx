@@ -31,16 +31,16 @@ const menuItems = [
         url: "/admin",
         icon: LayoutDashboard,
     },
-    {
-        title: "Bot Management",
-        url: "/bots",
-        icon: Bot,
-    },
-    {
-        title: "Settings",
-        url: "/settings",
-        icon: Settings,
-    },
+    // {
+    //     title: "Bot Management",
+    //     url: "/bots",
+    //     icon: Bot,
+    // },
+    // {
+    //     title: "Settings",
+    //     url: "/settings",
+    //     icon: Settings,
+    // },
 ];
 
 export function AppSidebar() {

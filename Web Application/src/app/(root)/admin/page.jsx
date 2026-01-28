@@ -223,7 +223,8 @@ const AdminPage = () => {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span>API: {systemHealth.services?.api || "unknown"}</span>
                             <span>Database: {systemHealth.services?.google_sheets || "unknown"}</span>
-                            <span>AI: {systemHealth.services?.llm || "unknown"}</span>
+                            <span>Gemini AI: {systemHealth.services?.gemini_ai || "unknown"}</span>
+                            <span>Telegram: {systemHealth.services?.telegram_alerts || "unknown"}</span>
                         </div>
                     )}
                 </CardContent>

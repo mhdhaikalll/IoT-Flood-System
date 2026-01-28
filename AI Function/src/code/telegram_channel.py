@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 # ================= CONFIG =================
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "YOUR_BOT_TOKEN")
-TELEGRAM_CHANNEL_ID = int(os.getenv("TELEGRAM_CHANNEL_ID", "YOUR_CHANNEL_ID"))
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7844415200:AAF5FG3YpCx9oqUtKGIonS5X_oIXU_GYCj4")
+TELEGRAM_CHANNEL_ID = int(os.getenv("TELEGRAM_CHANNEL_ID", "-1003795098612"))
 BACKEND_API_URL = os.getenv("BACKEND_API_URL", "http://localhost:8000")
 
 ALERT_RISK_THRESHOLD = 50

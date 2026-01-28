@@ -155,46 +155,51 @@ def generate_reading(location: Dict, scenario: str = "normal") -> Dict:
         "location": location["location"]
     }
 
-def generate_dummy_data(days: int = 7, readings_per_day: int = 4) -> List[Dict]:
+def generate_dummy_data(
+    days: int = 30,
+    readings_per_day: int = 48,
+    force_levels: bool = True
+) -> List[Dict]:
     """
-    Generate historical sensor data for single node.
-    Simulates various weather patterns including monsoon scenarios.
+    Generate LARGE historical dataset (>1000 rows).
+    Ensures LOW, MODERATE, HIGH flood risks exist.
     """
     data = []
     start = datetime.now() - timedelta(days=days)
-    total = days * readings_per_day * len(SENSOR_NODE)
-    
-    print(f"📊 Generating {total} readings ({days} days × {readings_per_day}/day × {len(SENSOR_NODE)} node)")
-    
+
+    risk_cycle = ["low", "moderate", "high"]
+    scenario_map = {
+        "low": "dry",
+        "moderate": "normal",
+        "high": "flood"
+    }
+
+    print(
+        f"📊 Generating data: "
+        f"{days} days × {readings_per_day}/day = "
+        f"{days * readings_per_day} rows"
+    )
+
     for day in range(days):
         date = start + timedelta(days=day)
-        
-        # Weather pattern simulation
-        if day % 7 < 2:
-            scenarios = ["rainy", "flood", "flood", "rainy"]
-        elif day % 7 < 5:
-            scenarios = ["normal", "rainy", "normal", "normal"]
-        else:
-            scenarios = ["normal", "dry", "normal", "dry"]
-        
-        hours = [h for h in range(0, 24, 24 // readings_per_day)]
-        
-        for hour in hours:
+        risk_level = risk_cycle[day % len(risk_cycle)]
+
+        for i in range(readings_per_day):
+            hour = int((24 / readings_per_day) * i)
             ts = date.replace(hour=hour, minute=0, second=0)
-            
-            # Night = more rain
-            if hour <= 6 or hour >= 18:
-                scenario = random.choice(scenarios)
-            else:
-                scenario = random.choice(["normal", scenarios[0]])
-            
+
             for loc in SENSOR_NODE:
+                loc["flood_risk"] = risk_level
+                scenario = scenario_map[risk_level]
+
                 reading = generate_reading(loc, scenario)
                 reading["timestamp"] = ts.isoformat()
                 reading["data_id"] = f"{loc['node_id']}_{ts.strftime('%Y%m%d%H%M%S')}"
                 data.append(reading)
-    
+
+    print(f"✅ Generated {len(data)} records")
     return data
+
 
 # ============== SPREADSHEET OPERATIONS ==============
 
@@ -312,6 +317,27 @@ def cmd_populate(days: int = 7):
     write_data(ws, data)
     return True
 
+def cmd_populate1000():
+    """
+    Populate spreadsheet with >1000 deterministic rows
+    """
+    print("\n🚀 Populating dataset (>1000 rows)...")
+    client = get_sheets_client()
+    if not client:
+        return False
+
+    sheet = get_spreadsheet(client)
+    ws = sheet.sheet1
+    setup_headers(ws)
+
+    data = generate_dummy_data(
+        days=30,
+        readings_per_day=48  # 30 × 48 = 1440 rows
+    )
+
+    write_data(ws, data)
+    return True
+
 def cmd_stats():
     """View statistics"""
     print("\n📈 Summary Statistics...")
@@ -372,6 +398,7 @@ def interactive_menu():
         "5": ("Populate 30 days data", lambda: cmd_populate(30)),
         "6": ("View statistics", cmd_stats),
         "7": ("Clear all data", cmd_clear),
+        "8": ("Populate >1000 rows (LOW/MED/HIGH)", cmd_populate1000),
         "0": ("Exit", None)
     }
     

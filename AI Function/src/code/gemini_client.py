@@ -15,7 +15,7 @@ from datetime import datetime
 
 # Gemini API Configuration
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 # Safety settings
@@ -165,12 +165,12 @@ THRESHOLDS:
 {historical_context}
 
 Please provide:
-1. A brief assessment of the current situation (1-2 sentences)
+1. A brief assessment of the current situation (1 sentence)
 2. Predicted trend for the next 2-6 hours based on available data
 3. One specific, actionable recommendation
 
-Keep your response concise (under 150 words) and focused on practical advice.
-Use clear, non-technical language suitable for general public alerts."""
+Keep your response concise (under 100 words) and focused on practical advice.
+Use clear, non-technical language suitable for general public alerts. Please use a simple response with bullet points where appropriate."""
 
         system_instruction = """You are an expert flood monitoring AI assistant. 
 Your role is to analyze sensor data and provide accurate, helpful flood risk assessments.
@@ -260,7 +260,7 @@ Question: {question}
 
 Provide a helpful, accurate answer based on the context provided.
 If the question cannot be answered with available information, say so politely.
-Keep your response concise and informative."""
+Keep your response simple, concise and informative."""
 
         system_instruction = """You are a helpful flood monitoring assistant.
 Answer questions about flood conditions, safety, and the monitoring system.
