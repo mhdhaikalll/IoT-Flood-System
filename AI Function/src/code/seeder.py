@@ -158,16 +158,21 @@ def generate_reading(location: Dict, scenario: str = "normal") -> Dict:
 def generate_dummy_data(
     days: int = 30,
     readings_per_day: int = 48,
-    force_levels: bool = True
+    mode: str = "mixed"
 ) -> List[Dict]:
     """
-    Generate LARGE historical dataset (>1000 rows).
-    Ensures LOW, MODERATE, HIGH flood risks exist.
+    Generate large dataset with controllable flood-risk behavior.
+
+    Modes:
+    - low | moderate | high : forced range
+    - mixed : cycles LOW → MODERATE → HIGH
+    - random : random risk per reading
     """
+
     data = []
     start = datetime.now() - timedelta(days=days)
 
-    risk_cycle = ["low", "moderate", "high"]
+    risk_levels = ["low", "moderate", "high"]
     scenario_map = {
         "low": "dry",
         "moderate": "normal",
@@ -175,30 +180,39 @@ def generate_dummy_data(
     }
 
     print(
-        f"📊 Generating data: "
-        f"{days} days × {readings_per_day}/day = "
-        f"{days * readings_per_day} rows"
+        f"📊 Generating data | mode={mode} | "
+        f"{days} days × {readings_per_day}/day"
     )
 
     for day in range(days):
         date = start + timedelta(days=day)
-        risk_level = risk_cycle[day % len(risk_cycle)]
+
+        # Decide daily risk profile
+        if mode in risk_levels:
+            daily_risk = mode
+        elif mode == "mixed":
+            daily_risk = risk_levels[day % 3]
+        elif mode == "random":
+            daily_risk = random.choice(risk_levels)
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
 
         for i in range(readings_per_day):
             hour = int((24 / readings_per_day) * i)
             ts = date.replace(hour=hour, minute=0, second=0)
 
             for loc in SENSOR_NODE:
-                loc["flood_risk"] = risk_level
-                scenario = scenario_map[risk_level]
+                loc["flood_risk"] = daily_risk
+                scenario = scenario_map[daily_risk]
 
                 reading = generate_reading(loc, scenario)
                 reading["timestamp"] = ts.isoformat()
                 reading["data_id"] = f"{loc['node_id']}_{ts.strftime('%Y%m%d%H%M%S')}"
                 data.append(reading)
 
-    print(f"✅ Generated {len(data)} records")
+    print(f"✅ Generated {len(data)} rows")
     return data
+
 
 
 # ============== SPREADSHEET OPERATIONS ==============
@@ -317,11 +331,18 @@ def cmd_populate(days: int = 7):
     write_data(ws, data)
     return True
 
-def cmd_populate1000():
+def cmd_populate1000(mode: str = "mixed"):
     """
-    Populate spreadsheet with >1000 deterministic rows
+    Populate spreadsheet with >1000 rows.
+
+    Modes:
+      - low
+      - moderate
+      - high
+      - mixed
+      - random
     """
-    print("\n🚀 Populating dataset (>1000 rows)...")
+    print(f"\n🚀 Populating dataset (>1000 rows) | mode={mode}")
     client = get_sheets_client()
     if not client:
         return False
@@ -332,11 +353,13 @@ def cmd_populate1000():
 
     data = generate_dummy_data(
         days=30,
-        readings_per_day=48  # 30 × 48 = 1440 rows
+        readings_per_day=48,  # 1440 rows
+        mode=mode
     )
 
     write_data(ws, data)
     return True
+
 
 def cmd_stats():
     """View statistics"""
@@ -398,7 +421,11 @@ def interactive_menu():
         "5": ("Populate 30 days data", lambda: cmd_populate(30)),
         "6": ("View statistics", cmd_stats),
         "7": ("Clear all data", cmd_clear),
-        "8": ("Populate >1000 rows (LOW/MED/HIGH)", cmd_populate1000),
+        "8": ("Populate >1000 (mixed)", lambda: cmd_populate1000("mixed")),
+        "9": ("Populate >1000 (low)", lambda: cmd_populate1000("low")),
+        "10": ("Populate >1000 (moderate)", lambda: cmd_populate1000("moderate")),
+        "11": ("Populate >1000 (high)", lambda: cmd_populate1000("high")),
+        "12": ("Populate >1000 (random)", lambda: cmd_populate1000("random")),
         "0": ("Exit", None)
     }
     
@@ -448,6 +475,9 @@ def main():
     elif cmd == "clear":
         if input("⚠️ Clear all data? (yes/no): ").lower() == "yes":
             cmd_clear()
+    elif cmd == "populate1000":
+        mode = args[1] if len(args) > 1 else "mixed"
+        cmd_populate1000(mode)
     elif cmd == "menu":
         interactive_menu()
     else:
