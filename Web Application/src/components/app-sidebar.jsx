@@ -36,11 +36,11 @@ const menuItems = [
     //     url: "/bots",
     //     icon: Bot,
     // },
-    // {
-    //     title: "Settings",
-    //     url: "/settings",
-    //     icon: Settings,
-    // },
+    {
+        title: "Settings",
+        url: "/settings",
+        icon: Settings,
+    },
 ];
 
 export function AppSidebar() {
