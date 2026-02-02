@@ -34,7 +34,6 @@ This project integrates multiple components to provide end-to-end flood monitori
 ```
 .
 ├── AI Function/                    # Backend API service
-│   ├── ai-documentation/           # Business model documentation
 │   ├── data/                       # Data storage
 │   └── src/                        # Python source code
 │       ├── code/
@@ -354,9 +353,12 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ## 📚 Documentation
 
-- **AI Function**: See `AI Function/src/code/README.md`
-- **Business Model**: See `AI Function/ai-documentation/business-model.md`
-- **Web Application**: See `Web Application/README.md`
+| Component | README Location |
+|-----------|-----------------|
+| **AI Function (Overview)** | [AI Function/README.md](AI%20Function/README.md) |
+| **AI Function (API Details)** | [AI Function/src/code/README.md](AI%20Function/src/code/README.md) |
+| **Web Application** | [Web Application/README.md](Web%20Application/README.md) |
+| **IoT Source Code** | [IoT Source Code/README.md](IoT%20Source%20Code/README.md) |
 
 ## 🤝 Contributing
 

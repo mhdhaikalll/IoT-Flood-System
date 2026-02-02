@@ -1,21 +1,23 @@
-# Flood Detection and Rain Monitoring System - AI Function
+# Flood Detection and Rain Monitoring System - API Documentation
 
-This is the AI backend service for the Flood Detection and Rain Monitoring System. It receives data from IoT sensors, stores it in Google Sheets, uses AI to predict flood risks, and sends Telegram alerts for high/critical risk.
+The FastAPI backend service for the Flood Detection and Rain Monitoring System. This is the **Hybrid Edition** that combines real-time IoT sensor data with historical Google Sheets analysis and Gemini AI-powered predictions.
 
-## Features
+## 🚀 Features
 
-- **Receive IoT Sensor Data**: Accepts data from a single node with Piezoelectric, Ultrasonic, and Rain sensors
-- **Google Sheets Storage**: Stores all sensor data in Google Sheets as a database
-- **AI-Powered Predictions**: Uses LLM (Gemini or OpenAI-compatible) to analyze trends and predict flood risks
-- **Telegram Alerts**: Sends automated alerts to a Telegram channel when flood risk is high or critical
-- **RESTful API**: Provides endpoints for data ingestion, prediction, and status
+- **Receive IoT Sensor Data**: Accepts data from ESP32 nodes with Piezoelectric, Ultrasonic, and Rain sensors
+- **Google Sheets Storage**: Stores all sensor data in Google Sheets as a persistent database
+- **Hybrid AI Predictions**: Uses Gemini AI (`gemini-2.5-flash`) with mathematical fallback
+- **Telegram Channel Alerts**: Sends automated alerts when flood risk is HIGH or CRITICAL (≥50%)
+- **Node Status Monitoring**: Tracks online/idle/offline status based on last data transmission
+- **Historical Analysis**: Analyzes trends from the last 3 days of data
+- **RESTful API**: Provides endpoints for data ingestion, prediction, history, and status
 
-## Setup
+## ⚙️ Setup
 
 ### 1. Install Dependencies
 
 ```bash
-cd src
+cd "AI Function/src"
 pip install -r requirements.txt
 ```
 
@@ -31,16 +33,16 @@ pip install -r requirements.txt
 ### 3. Configure Telegram Alerts
 
 1. Create a Telegram bot via [@BotFather](https://t.me/BotFather)
-2. Add the bot to your Telegram channel and make it an **admin**
-3. Get your channel ID (e.g., `-100xxxxxxxxxx`)
-4. Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHANNEL_ID` in your `.env` file
+2. Create a Telegram channel
+3. Add the bot to your channel and make it an **admin**
+4. Get your channel ID (format: `-100xxxxxxxxxx`)
+5. Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHANNEL_ID` in your `.env` file
 
-### 4. Configure LLM (Optional)
+### 4. Configure Gemini AI
 
-The system supports any OpenAI-compatible LLM API. Default is configured for Gemini or Ollama.
-
-**For Gemini:**
-- Set `AI_PROVIDER=gemini` in `.env` (default)
+1. Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/)
+2. Set `GEMINI_API_KEY` in your `.env` file
+3. The system uses `gemini-2.5-flash` model by default
 
 ### 5. Environment Variables
 
@@ -48,6 +50,24 @@ Copy `.env.example` to `.env` and update the values:
 
 ```bash
 cp .env.example .env
+```
+
+```env
+# Google Sheets
+GOOGLE_SHEETS_CREDENTIALS=credentials.json
+SPREADSHEET_NAME=FloodMonitoringData
+
+# AI Provider
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+TELEGRAM_CHANNEL_ID=-100xxxxxxxxxx
+
+# Frontend CORS
+FRONTEND_URL=http://localhost:3000
 ```
 
 ### 6. Run the Server
@@ -63,29 +83,49 @@ Or using uvicorn directly:
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## API Endpoints
+The API will be available at `http://localhost:8000`
+
+## 📡 API Endpoints
 
 ### Health Check
 
 ```
 GET /
 ```
-Returns system status and service availability.
+Returns system status, service availability, and data statistics.
 
-### Submit Sensor Data (Triggers Telegram alert if risk is high/critical)
+### Submit Sensor Data
 
 ```
 POST /api/sensor-data
 ```
+Receives IoT sensor data and triggers Telegram alert if risk is HIGH or CRITICAL.
 
-**Body:**
+**Request Body:**
 ```json
 {
     "node_id": "NODE-001",
-    "piezo_value": 90.0,
-    "ultrasonic_value": 90.0,
-    "rain_sensor_value": 90.0,
-    "location": "Test Location"
+    "piezo_value": 350.5,
+    "ultrasonic_value": 45.2,
+    "rain_sensor_value": 2500,
+    "location": "Shah Alam, Selangor",
+    "timestamp": "2026-02-03T10:30:00"
+}
+```
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Sensor data stored successfully",
+    "data_id": "NODE-001_20260203103000",
+    "timestamp": "2026-02-03T10:30:00",
+    "prediction": {
+        "flood_risk": "LOW",
+        "probability": 15,
+        "rain_intensity": "LIGHT",
+        "water_level_status": "NORMAL"
+    }
 }
 ```
 
@@ -94,100 +134,212 @@ POST /api/sensor-data
 ```
 POST /api/predict
 ```
+Get AI-powered flood risk prediction for a specific node.
 
-**Body:**
-
+**Request Body:**
 ```json
 {
-    "node_id": "NODE-001",
-    "hours_ahead": 6
+    "node_id": "NODE-001"
 }
 ```
 
 **Response:**
-
 ```json
 {
     "node_id": "NODE-001",
-    "current_water_level": 90.0,
-    "current_rain_intensity": "extreme",
+    "current_water_level": 45.2,
+    "current_rain_intensity": "light",
     "is_raining": true,
-    "flood_risk": "critical",
-    "risk_percentage": 100.0,
-    "prediction_summary": "Flood risk is CRITICAL (100.0%). Water level: 90.0cm. Rain intensity: extreme.",
-    "recommended_actions": [...],
+    "flood_risk": "moderate",
+    "risk_percentage": 35.0,
+    "prediction_summary": "Flood risk is MODERATE (35.0%). Water level: 45.2cm.",
+    "recommended_actions": ["Continue monitoring water levels"],
     "ai_analysis": "...",
-    "timestamp": "2026-01-28T10:30:00"
+    "analysis_source": "gemini",
+    "timestamp": "2026-02-03T10:30:00"
 }
 ```
 
 ### Get Sensor History
 
 ```
-GET /api/history?node_id=NODE-001&limit=50
+GET /api/history?node_id=NODE-001&limit=50&days_back=7
 ```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `node_id` | string | - | Filter by node ID (optional) |
+| `limit` | int | 100 | Maximum records to return |
+| `days_back` | int | - | Filter by days (optional) |
 
 ### Get Node Status
 
 ```
-GET /api/status/NODE-001
+GET /api/status/{node_id}
 ```
+Get detailed status and latest readings for a specific node.
 
-### Get All Nodes Status
+### Get All Nodes
 
 ```
 GET /api/nodes
 ```
+Get status of all registered nodes.
 
-## Sensor Data Interpretation
-
-| Sensor      | Value Range | Meaning                                 |
-|-------------|-------------|-----------------------------------------|
-| Piezo       | 0-100       | Rain intensity (0=none, 100=extreme)    |
-| Ultrasonic  | 0+ cm       | Water level in centimeters              |
-| Rain Sensor | 0-100       | Rain detection (0=dry, 100=heavy rain)  |
-
-## Flood Risk Levels
-
-| Level     | Risk % | Action                  |
-|-----------|--------|-------------------------|
-| LOW       | 0-24%  | Normal monitoring       |
-| MODERATE  | 25-49% | Increased monitoring    |
-| HIGH      | 50-74% | Prepare evacuation      |
-| CRITICAL  | 75-100%| Immediate evacuation    |
-
-## Telegram Alert Logic
-
-- Alerts are sent to the configured Telegram channel when:
-  - Flood risk is HIGH or CRITICAL
-  - Risk percentage is 50% or above
-  - Cooldown period (15 min) has passed for the node
-
-## Architecture
+### Analyze All Nodes
 
 ```
-IoT Node (Sensors)
+GET /api/analyze-all
+```
+Perform AI analysis on all active nodes simultaneously.
+
+### Test Telegram
+
+```
+GET /api/test-telegram
+```
+Test Telegram bot connection.
+
+### Test Alert
+
+```
+POST /api/test-alert
+```
+Trigger a test flood alert to Telegram channel.
+
+### System Info
+
+```
+GET /api/system-info
+```
+Get detailed system configuration and statistics.
+
+## 📊 Sensor Data Interpretation
+
+### Piezo Sensor (Vibration/Rain Detection)
+| Value Range | Meaning |
+|-------------|---------|
+| 0 - 200 | No rain / Calm |
+| 200 - 500 | Light activity |
+| 500 - 800 | Moderate activity |
+| > 800 | Heavy rain / Strong vibration |
+
+### Ultrasonic Sensor (Water Level)
+| Value (cm) | Status |
+|------------|--------|
+| < 50 | ✅ Normal |
+| 50 - 79 | ⚠️ Warning |
+| ≥ 80 | 🚨 Danger |
+
+### Rain Sensor (Analog)
+| Value Range | Rain Intensity |
+|-------------|----------------|
+| ≥ 3000 | None |
+| 2000 - 2999 | Light |
+| 1000 - 1999 | Moderate |
+| < 1000 | Heavy |
+
+## 🎯 Flood Risk Levels
+
+| Level     | Risk % | Water Level | Action                  |
+|-----------|--------|-------------|-------------------------|
+| 🟢 LOW       | 0-24%  | < 30 cm | Normal monitoring       |
+| 🟡 MODERATE  | 25-49% | 30-50 cm | Increased monitoring    |
+| 🟠 HIGH      | 50-74% | 50-80 cm | Prepare evacuation      |
+| 🔴 CRITICAL  | 75-100%| > 80 cm | Immediate evacuation    |
+
+## 📱 Telegram Alert Logic
+
+Alerts are automatically sent to the configured Telegram channel when:
+
+- ✅ Flood risk is **HIGH** or **CRITICAL**
+- ✅ Risk percentage is **≥50%**
+- ✅ Cooldown period (**15 minutes**) has passed for the node
+
+### Alert Message Format
+
+```
+🚨 FLOOD ALERT 🚨
+
+📍 Node: NODE-001
+📌 Location: Shah Alam, Selangor
+💧 Water Level: 85.0 cm
+🌧️ Rain Intensity: heavy
+
+Risk Level: CRITICAL (92.5%)
+
+Immediate Actions:
+• IMMEDIATE EVACUATION REQUIRED
+• Emergency services on high alert
+• All residents must move to higher ground
+
+⏰ Alert Time: 2026-02-03 14:30:00
+```
+
+## 🤖 Hybrid AI System
+
+The backend uses a **Hybrid Edition** approach:
+
+### Primary: Google Gemini AI
+- Model: `gemini-2.5-flash`
+- Provides intelligent analysis with contextual recommendations
+- Considers historical patterns and environmental factors
+
+### Fallback: Mathematical Model
+When Gemini is unavailable, the system uses weighted calculations:
+
+```python
+risk = (water_level_risk * 0.4) + (piezo_risk * 0.3) + (rain_risk * 0.3)
+```
+
+## 🏗️ Architecture
+
+```
+IoT Node (ESP32 Sensors)
     │
     ▼ POST /api/sensor-data
-┌──────────────────────────────┐
-│   FastAPI Server (main.py)   │
-│   ┌──────────────────────┐   │
-│   │ Data Processing      │   │
-│   └─────────┬────────────┘   │
-│             │                │
-│   ┌─────────▼────────────┐   │
-│   │ Google Sheets (DB)   │   │
-│   └─────────┬────────────┘   │
-│             │                │
-│   ┌─────────▼────────────┐   │
-│   │  AI Analysis (LLM)   │   │
-│   └─────────┬────────────┘   │
-│             │                │
-│   ┌─────────▼────────────┐   │
-│   │ Telegram Alert       │   │
-│   └──────────────────────┘   │
-└──────────────────────────────┘
+┌──────────────────────────────────────────┐
+│      FastAPI Server (main.py)            │
+│   ┌──────────────────────────────────┐   │
+│   │  Data Validation (Pydantic)      │   │
+│   └──────────────┬───────────────────┘   │
+│                  │                       │
+│   ┌──────────────▼───────────────────┐   │
+│   │   Google Sheets Storage          │   │
+│   │   (gspread + Service Account)    │   │
+│   └──────────────┬───────────────────┘   │
+│                  │                       │
+│   ┌──────────────▼───────────────────┐   │
+│   │   AI Analysis (Hybrid)           │   │
+│   │   ├─ Primary: Gemini AI          │   │
+│   │   └─ Fallback: Math Model        │   │
+│   └──────────────┬───────────────────┘   │
+│                  │                       │
+│   ┌──────────────▼───────────────────┐   │
+│   │   Telegram Alert (if risk ≥50%)  │   │
+│   │   (15-min cooldown per node)     │   │
+│   └──────────────────────────────────┘   │
+└──────────────────────────────────────────┘
     │
-    ▼ POST /api/predict
-Web Application / Dashboard
+    ▼ GET /api/predict, /api/history
+Next.js Web Dashboard
 ```
+
+## 📁 Files
+
+| File | Description |
+|------|-------------|
+| `main.py` | FastAPI application (Hybrid Edition) |
+| `gemini_client.py` | Google Gemini AI client wrapper |
+| `telegram_channel.py` | Telegram channel alert handler |
+| `seeder.py` | Test data generation utility |
+| `.env` | Environment variables (not in repo) |
+| `.env.example` | Environment template |
+| `credentials.json` | Google Service Account (not in repo) |
+
+## 🔗 Related Documentation
+
+- [AI Function Overview](../../README.md)
+- [Main Project README](../../../README.md)
+- [Web Application](../../../Web%20Application/README.md)
+- [IoT Source Code](../../../IoT%20Source%20Code/README.md)
