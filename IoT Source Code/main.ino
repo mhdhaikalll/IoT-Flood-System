@@ -31,7 +31,7 @@ const char* WIFI_SSID = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
 // Backend API Configuration
-const char* API_URL = "http://YOUR_SERVER_IP:8000/api/sensor-data";
+const char* API_URL = "http://127.0.0.1:8000/api/sensor-data";
 const char* NODE_ID = "node_001";
 const char* LOCATION = "default_location";
 
